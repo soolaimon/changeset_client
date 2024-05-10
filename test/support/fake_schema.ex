@@ -9,6 +9,7 @@ defmodule FakeSchema do
   embedded_schema do
     field :age, :integer
     field :name, :string
+    field :length_is, :string
     field :plain_required_one, :string
     field :inclusion_field
 
@@ -26,8 +27,9 @@ defmodule FakeSchema do
     ])
     |> cast_embed(:fake_embed, with: &fake_embed_changeset/2)
     |> validate_inclusion(:age, 0..100, message: "must be between 0 and 100")
-    |> validate_length(:name, min: 2, max: 255, message: "It's too short")
-    |> validate_inclusion(:inclusion_field, ["a", "b", "c"])
+    |> validate_length(:name, min: 2, max: 255, message: "It's too short. Or too long. idk.")
+    |> validate_length(:length_is, is: 5, message: "Length must be 5")
+    |> validate_inclusion(:inclusion_field, ["a", "b", "c"], message: "must be a, b, or c")
     |> validate_required([:name, :plain_required_one, :age])
   end
 

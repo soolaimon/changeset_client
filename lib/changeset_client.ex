@@ -12,6 +12,8 @@ defmodule ChangesetClient do
      #defmodule FakeSchema do
      #   use Ecto.Schema
     # end
+  #
+  Includes message when possible
 
    #   iex> ChangesetClient.html_validations_for(%Ecto.Changeset{})
    #   :world
@@ -25,10 +27,24 @@ defmodule ChangesetClient do
   # maxLength
   # pattern
   # validate
+  # validate_acceptance/3
+  # validate_confirmation/3
+  # validate_exclusion/4
+  # validate_format/4
+  # validate_inclusion/4
+  # validate_length/3
+  # validate_number/3
+  # validate_required/3
+  # validate_subset/4
+  # validations/1
 
   @spec validations_for(Ecto.Changeset.t()) :: %{}
   def validations_for(changeset) do
     required = Enum.map(changeset.required, &{&1, :required})
+
+    Changeset.traverse_validations(changeset, fn cs, field, {message, opts} ->
+      nil
+    end)
 
     validations =
       Enum.concat(required, Changeset.validations(changeset))
@@ -44,7 +60,7 @@ defmodule ChangesetClient do
         end)
       end)
 
-    Enum.into(validations, %{})
+    Enum.into(validations, %{}) |> dbg()
     # Changeset.traverse_validations(changeset, fn {message, opts} ->
     #  {message, opts} |> dbg()
     # end)
@@ -55,7 +71,10 @@ defmodule ChangesetClient do
   end
 
   defp transform({:length, opts}) do
-    {:length, %{min: opts[:min], max: opts[:max]}}
+    case opts[:is] do
+      nil -> {:length, %{min: opts[:min], max: opts[:max], message: opts[:message]}}
+      is -> {:length, %{min: is, max: is, message: opts[:message]}}
+    end
   end
 
   defp transform(:required), do: {:required, true}
