@@ -41,29 +41,23 @@ defmodule ChangesetClient do
   @spec validations_for(Ecto.Changeset.t()) :: %{}
   def validations_for(changeset) do
     required = Enum.map(changeset.required, &{&1, :required})
+    dbg(changeset.types)
 
-    Changeset.traverse_validations(changeset, fn cs, field, {message, opts} ->
-      nil
+    Enum.concat(required, Changeset.validations(changeset))
+    |> transform_validations()
+    |> consolidate_validations()
+  end
+
+  defp consolidate_validations(validations) do
+    Enum.reduce(validations, %{}, fn {field, {type, validation}}, acc ->
+      Map.update(acc, field, %{type => validation}, &Map.put(&1, type, validation))
     end)
+  end
 
-    validations =
-      Enum.concat(required, Changeset.validations(changeset))
-      |> Enum.map(fn {field, validation} ->
-        {field, transform(validation)}
-      end)
-      |> then(fn validations ->
-        fields = Keyword.keys(validations) |> Enum.uniq()
-
-        Enum.map(fields, fn field ->
-          field_validations = Keyword.get_values(validations, field)
-          {field, Enum.into(field_validations, %{})}
-        end)
-      end)
-
-    Enum.into(validations, %{}) |> dbg()
-    # Changeset.traverse_validations(changeset, fn {message, opts} ->
-    #  {message, opts} |> dbg()
-    # end)
+  defp transform_validations(validations) do
+    Enum.map(validations, fn {field, validation} ->
+      {field, transform(validation)}
+    end)
   end
 
   defp transform({:inclusion, min..max}) do
